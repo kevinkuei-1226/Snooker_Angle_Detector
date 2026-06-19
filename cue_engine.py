@@ -9,7 +9,7 @@ class CueAngleEngine:
         self.threshold = threshold
 
 
-
+    # ================================================================================================
     # based on a provided image that should contain a white paper surrounding the cue,
     # computes the angle based on the white paper and returns two results:
     # arg 1: the angle estimated by drawing a rectangle on slip (a bit more robust)
@@ -91,13 +91,34 @@ class CueAngleEngine:
             return abs(90 - box_angle), line_angle
         return None, None
     
+
+
+    # ================================================================================================
     # finds the optimal threshold by finding the lowest: 
     # (variance within the specified window) + minimal difference between blue line and red box logic,
     # and returns the first threshold value in the window
     def find_optimal_threshold(self, 
-                               result_array, 
+                               selected_roi,
+                               threshold_range,
                                window_size=20):
         
+
+        # pixel_brightness_threshold_array = list(range(100, 256, 1))
+
+        result_array = []
+        for threshold in threshold_range:
+            
+            #start_time = time.perf_counter()
+            red_box_angle, blue_line_angle = self.get_angle(selected_roi, 
+                                                                    pixel_brightness_threshold=threshold, 
+                                                                    draw_validation_line=False)
+            result_array.append((threshold, red_box_angle, blue_line_angle))
+            # end_time = time.perf_counter()
+            # if red_box_angle is not None and blue_line_angle is not None:
+            #     print(f"Threshold: {threshold}, red box angle: {red_box_angle:12.2f}, blue box angle: {blue_line_angle:12.2f}, time taken: {end_time - start_time:.4f} seconds")
+
+
+
         consensus_scores = []
         
         for i in range(len(result_array) - window_size + 1):
@@ -111,7 +132,7 @@ class CueAngleEngine:
                 v_red, v_blue = statistics.variance(reds), statistics.variance(blues)
                 
                 # CONSENSUS LOGIC:
-                # 1. We want the difference between red and blue to be near zero
+                # 1. We want the difference between red box and blue line to be near zero
                 # 2. We want both variances to be low
                 diff_score = abs(m_red - m_blue)
                 stability_score = v_red + v_blue
