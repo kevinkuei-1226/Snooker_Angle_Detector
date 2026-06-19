@@ -1,0 +1,14 @@
+Current TODO:
+    1. test out the new braces rubber bands
+        - take some pictures when the braces are attached to the cue at different places for later testing on constructing a straight line
+        - also take pictures at different angles for validation
+
+
+
+
+Ideas:
+    
+
+
+Validation:
+    1. the angles of the lines produced at each frame should be fairly continuous from frame to frame, and is a good proxy if it breaks
