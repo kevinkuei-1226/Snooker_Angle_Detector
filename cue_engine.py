@@ -1,13 +1,16 @@
 import cv2
 import numpy as np
 import statistics
+from collections import deque
 # import time
 # import itertools
 
 class CueAngleEngine:
-    def __init__(self, threshold=200):
+    def __init__(self, threshold=200, buffer_size=5):
         self.threshold = threshold
-
+        # Create history buffers for both angles (stores the last 'buffer_size' frames)
+        self.box_history = deque(maxlen=buffer_size)
+        self.line_history = deque(maxlen=buffer_size)
 
     # ================================================================================================
     # based on a provided image that should contain a white paper surrounding the cue,
@@ -64,7 +67,7 @@ class CueAngleEngine:
             # Find the largest white shape by area
             largest_blob = max(contours, key=cv2.contourArea)
 
-            if cv2.contourArea(largest_blob) > 50:
+            if cv2.contourArea(largest_blob) > 30:
                 
                 # --- 1. RED BOX LOGIC ---
                 rect = cv2.minAreaRect(largest_blob)
@@ -75,15 +78,26 @@ class CueAngleEngine:
                 raw_box_angle = rect[2]
                 width, height = rect[1]
                 if width < height:
-                    box_angle = abs(raw_box_angle)
+                    box_angle = raw_box_angle
                 else:
-                    box_angle = abs(90 - raw_box_angle)
+                    box_angle = 90 - raw_box_angle
 
                 # --- 2. BLUE LINE LOGIC ---
                 [vx, vy, cx, cy] = cv2.fitLine(largest_blob, cv2.DIST_L2, 0, 0.01, 0.01)
                 vx, vy, cx, cy = float(vx[0]), float(vy[0]), float(cx[0]), float(cy[0])
 
-                line_angle = np.abs(np.degrees(np.arctan2(vy, vx)))
+
+                # Force the vector direction to always point 'up' relative to the image screen (y decreases up)
+                if vy > 0:
+                    vx = -vx
+                    vy = -vy
+            
+                # Calculate the actual angle relative to the horizontal plane
+                line_angle = np.degrees(np.arctan2(vy, vx))
+
+                # Shift it so pointing right is 0°, straight up is 90°, and pointing left is 180°
+                if line_angle < 0:
+                    line_angle += 180
 
 
         # returns red box vertical angle an blue line angle
@@ -144,3 +158,17 @@ class CueAngleEngine:
         # Sort by the best score and return the top one
         best = min(consensus_scores, key=lambda x: x['score'])
         return best
+    
+
+    # smooth out angles in video frames for less jittering
+    def smooth_angle(self, new_angle, history_buffer):
+        """Helper method to handle the rolling average math"""
+        if new_angle is None:
+            # If we lose tracking for a frame, return the last known average
+            return np.mean(history_buffer) if history_buffer else None
+        
+        # Add new angle to the rolling window
+        history_buffer.append(new_angle)
+        
+        # Return the clean average of our history window
+        return np.mean(history_buffer)
