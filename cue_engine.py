@@ -110,8 +110,8 @@ class CueAngleEngine:
             
             #start_time = time.perf_counter()
             red_box_angle, blue_line_angle = self.get_angle(selected_roi, 
-                                                                    pixel_brightness_threshold=threshold, 
-                                                                    draw_validation_line=False)
+                                                            pixel_brightness_threshold=threshold, 
+                                                            )
             result_array.append((threshold, red_box_angle, blue_line_angle))
             # end_time = time.perf_counter()
             # if red_box_angle is not None and blue_line_angle is not None:
