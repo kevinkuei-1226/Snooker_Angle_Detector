@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import statistics
 from collections import deque
+import math
 # import time
 # import itertools
 
@@ -11,6 +12,14 @@ class CueAngleEngine:
         # Create history buffers for both angles (stores the last 'buffer_size' frames)
         self.box_history = deque(maxlen=buffer_size)
         self.line_history = deque(maxlen=buffer_size)
+
+
+    # ================================================================================================
+    # finds the center position of the white paper in the given image
+    # returns the position in image coordinates
+
+    def get_position(self):
+        a = 1
 
     # ================================================================================================
     # based on a provided image that should contain a white paper surrounding the cue,
@@ -115,23 +124,15 @@ class CueAngleEngine:
                                selected_roi,
                                threshold_range,
                                window_size=20):
-        
-
-        # pixel_brightness_threshold_array = list(range(100, 256, 1))
+    
 
         result_array = []
         for threshold in threshold_range:
-            
-            #start_time = time.perf_counter()
+
             red_box_angle, blue_line_angle = self.get_angle(selected_roi, 
                                                             pixel_brightness_threshold=threshold, 
                                                             )
             result_array.append((threshold, red_box_angle, blue_line_angle))
-            # end_time = time.perf_counter()
-            # if red_box_angle is not None and blue_line_angle is not None:
-            #     print(f"Threshold: {threshold}, red box angle: {red_box_angle:12.2f}, blue box angle: {blue_line_angle:12.2f}, time taken: {end_time - start_time:.4f} seconds")
-
-
 
         consensus_scores = []
         
@@ -146,13 +147,17 @@ class CueAngleEngine:
                 v_red, v_blue = statistics.variance(reds), statistics.variance(blues)
                 
                 # CONSENSUS LOGIC:
-                # 1. We want the difference between red box and blue line to be near zero
+                # 1. We want the difference between red box and blue line angle to be near zero
                 # 2. We want both variances to be low
+                # 3. use standard deviation for unit consistency (in degrees)
+                # 4. a bit more important for methods to agree than variance to be minimal
                 diff_score = abs(m_red - m_blue)
-                stability_score = v_red + v_blue
+                stability_score = math.sqrt(v_red) + math.sqrt(v_blue)
                 
-                # The lower the final score, the higher the consensus
-                final_score = diff_score + stability_score
+                diff_weight = 0.7
+                sd_weight = 0.3
+
+                final_score =diff_weight * diff_score + sd_weight * stability_score
                 consensus_scores.append({'start': window[0][0], 'score': final_score, 'mean': (m_red + m_blue) / 2})
 
         # Sort by the best score and return the top one

@@ -24,8 +24,8 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
                                                   threshold_range=pixel_threshold_range,
                                                   window_size=optimal_window_size)
 
-    # taking largest threshold here to filter out the ambiguous bright pixels
-    opt_threshold = opt_threshold_stats['start'] + optimal_window_size
+    # taking mid threshold here
+    opt_threshold = opt_threshold_stats['start'] + int(optimal_window_size / 2)
 
     print(f"optimal threshold: {opt_threshold}")
 

@@ -5,3 +5,5 @@ Further robustness testing on selecting ROI.
 need some validation on ROI, and think about optimizing region selection as well
 
 On the paper device, try to make the paper fit tightly to the cue, also think of other materials that work better
+
+final_score calculation in the function find_optimal_threshold need some testing
