@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 from cue_engine import CueAngleEngine # <--- This is the link!
 
-def main(video_path, pixel_threshold_range, optimal_window_size):
+def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, angle_precision=0):
     # 1. Initialize the engine
-    engine = CueAngleEngine(buffer_size=1) 
+    engine = CueAngleEngine(buffer_size=buffer_size) 
     
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
@@ -20,7 +20,8 @@ def main(video_path, pixel_threshold_range, optimal_window_size):
                                                   threshold_range=pixel_threshold_range,
                                                   window_size=optimal_window_size)
     
-    opt_threshold = opt_threshold_stats['start']
+    # taking largest threshold here to filter out the ambiguous bright pixels
+    opt_threshold = opt_threshold_stats['end']
 
     print(f"optimal threshold: {opt_threshold}")
 
@@ -37,7 +38,10 @@ def main(video_path, pixel_threshold_range, optimal_window_size):
         line_angle_smoothed = engine.smooth_angle(line_angle, engine.line_history)
 
         # --- NEW SENSOR FUSION FILTERING ---
-        if box_angle == 0.00 or box_angle == 90.00:
+
+        if not box_angle or not line_angle:
+            final_angle = None
+        elif box_angle == 0.00 or box_angle == 90.00:
             # Case A: The box has snapped to the grid lines (blind spot). Rely entirely on the line.
             final_angle = line_angle_smoothed
         elif abs(box_angle - line_angle) > 10.0:
@@ -48,20 +52,27 @@ def main(video_path, pixel_threshold_range, optimal_window_size):
             # Case C: They are clean and agree. Average them together to eliminate individual noise!
             final_angle = (box_angle_smoothed + line_angle_smoothed) / 2.0
 
-        if final_angle is not None:
-            print(f"Unsmoothed Box Angle: {90 - box_angle:.2f}, "
-                  f"Unsmoothed Line Angle: {abs(90 - line_angle):.2f}, " 
-                  f"Final Angle: {90 - final_angle:.2f}")
-            
-            cv2.putText(
-                frame, 
-                f"{(90 - final_angle):.2f}", 
-                (50, 100),                # 1. Bumped Y coordinate down slightly so large text doesn't clip off-screen
-                cv2.FONT_HERSHEY_SIMPLEX, # 2. Explicitly named the font type
-                2.0,                      # 3. FONT SCALE (Bigger number = Bigger text, default was 1.0 or 2.0)
-                (0, 255, 0),              # 4. COLOR (Green)
-                4                         # 5. THICKNESS (Higher number = Thicker/Bolder text, default was 1 or 2)
-            )
+
+
+        print(
+            f"Unsmoothed Box Angle: {f'{90 - box_angle:.2f}' if box_angle else 'N/A'}, "
+            f"Unsmoothed Line Angle: {f'{abs(90 - line_angle):.2f}' if line_angle else 'N/A'}, "
+            f"Final Angle: {f'{90 - final_angle:.2f}' if final_angle is not None else 'N/A'}"
+        )
+        
+
+
+        angle_precision = max(0, int(angle_precision))
+
+        cv2.putText(
+            frame, 
+            f"{f'{(90 - final_angle):.{angle_precision}f}' if final_angle is not None else 'N/A'}",
+            (50, 100),                # 1. Bumped Y coordinate down slightly so large text doesn't clip off-screen
+            cv2.FONT_HERSHEY_SIMPLEX, # 2. Explicitly named the font type
+            2.0,                      # 3. FONT SCALE (Bigger number = Bigger text, default was 1.0 or 2.0)
+            (0, 255, 0),              # 4. COLOR (Green)
+            4                         # 5. THICKNESS (Higher number = Thicker/Bolder text, default was 1 or 2)
+        )
             
         cv2.imshow("Main View", frame)
         key = cv2.waitKey(1) & 0xFF
@@ -88,8 +99,10 @@ def test():
 
 
 if __name__ == "__main__":
-    video_path = "Data/Cue with paper between head and hand 1.mp4"
+    video_path = "Data/20260620 EB Birds eye view 1.mp4"
     pixel_threshold_range = list(range(100,256,1))
     main(video_path=video_path,
          pixel_threshold_range=pixel_threshold_range,
-         optimal_window_size=30)
+         optimal_window_size=30,
+         angle_precision=1,
+         buffer_size=5)

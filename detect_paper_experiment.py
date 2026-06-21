@@ -1,10 +1,3 @@
-import sys
-
-# Your active environment path
-env_path = "/Users/kevinkuei/Desktop/Snooker/Snooker Tool/Cue Line Detector/snooker-env/lib/python3.13/site-packages"
-if env_path not in sys.path:
-    sys.path.insert(0, env_path)
-
 import cv2
 import numpy as np
 import statistics
@@ -27,7 +20,7 @@ def track_white_paper_blob(image_path,
     if img is None:
         print(f"Error: Could not load image at {image_path}")
         return
-
+    
     # Resize massive smartphone photos
     height, width = img.shape[:2]
     
@@ -194,6 +187,9 @@ def track_white_paper_blob(image_path,
     #cv2.rectangle(display_img, (x, y), (x+w, y+h), (0, 255, 255), 2)
 
     cv2.imshow("Final Tracking vs Validation", display_img)
+    cv2.imshow("Grayed version", gray)
+    cv2.imshow("Blurred version", blurred)
+    cv2.imshow("Pixels survived after threshold", thresh)
     
     # don't wait key when doing validation, uncomment when wanting to view result before destroying windows
     cv2.waitKey(0)
@@ -209,9 +205,9 @@ if __name__ == "__main__":
     # Ensure this matches the name of your uploaded test file
     # test_image = "Data/Cue with Paper 3.jpeg" # 99.87 degrees from validation, or or 80.13 degrees from validation
     # test_image = "Data/Cue with Paper 5.jpeg" # 86.05 degrees from validation
-    test_image = "Data/snapshot_20260618-210431_frame_187.jpg"
+    test_image = "Data/20260620 EB Birds Eye view first frame.png"
 
     red_box_angle, blue_line_angle = track_white_paper_blob(test_image, 
-                                                            pixel_brightness_threshold=130, 
-                                                            cropping_box=(235, 310, 370, 455), 
+                                                            pixel_brightness_threshold=174, 
+                                                            cropping_box=None,
                                                             draw_validation_line=False)

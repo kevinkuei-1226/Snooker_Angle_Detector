@@ -196,33 +196,6 @@ if __name__ == "__main__":
         if red_box_angle is not None and blue_line_angle is not None:
             print(f"Threshold: {threshold}, red box angle: {red_box_angle:12.2f}, blue box angle: {blue_line_angle:12.2f}, time taken: {end_time - start_time:.4f} seconds")
 
-    # We want windows of 5, so we iterate up to the point where 5 thresholds remain
-    window_size = 5
-    print("\n=== ROLLING WINDOW STATISTICS (SIZE 5) ===")
-
-    for i in range(len(result_array) - window_size + 1):
-        window = result_array[i : i + window_size]
-        
-        # Extract lists of angles (excluding Nones)
-        red_angles = [r[1] for r in window if r[1] is not None]
-        blue_angles = [r[2] for r in window if r[2] is not None]
-        
-        # Only calculate if we have enough valid data
-        if len(red_angles) == window_size and len(blue_angles) == window_size:
-            avg_red = statistics.mean(red_angles)
-            avg_blue = statistics.mean(blue_angles)
-            
-            # Calculate variance
-            var_red = statistics.variance(red_angles)
-            var_blue = statistics.variance(blue_angles)
-            
-            start_t = window[0][0]
-            end_t = window[-1][0]
-            
-            print(f"Threshold: {int(start_t)}-{int(end_t)}, "
-                f"Avg Red: {avg_red:.2f}, Avg Blue: {avg_blue:.2f}, "
-                f"Var Red: {var_red:.4f}, Var Blue: {var_blue:.4f}, "
-                )
           
 
     # finding the optimal threshold based on the consensus logic
