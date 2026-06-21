@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from cue_engine import CueAngleEngine # <--- This is the link!
+
 
 def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, angle_precision=0):
     # 1. Initialize the engine
@@ -19,11 +23,13 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
     opt_threshold_stats = engine.find_optimal_threshold(selected_roi=cropped_first_frame,
                                                   threshold_range=pixel_threshold_range,
                                                   window_size=optimal_window_size)
-    
+
     # taking largest threshold here to filter out the ambiguous bright pixels
-    opt_threshold = opt_threshold_stats['end']
+    opt_threshold = opt_threshold_stats['start'] + optimal_window_size
 
     print(f"optimal threshold: {opt_threshold}")
+
+    angle_history_log = []
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -52,7 +58,10 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
             # Case C: They are clean and agree. Average them together to eliminate individual noise!
             final_angle = (box_angle_smoothed + line_angle_smoothed) / 2.0
 
-
+        if final_angle is not None:
+            angle_history_log.append(90 - final_angle)
+        else:
+            angle_history_log.append(float('nan'))
 
         print(
             f"Unsmoothed Box Angle: {f'{90 - box_angle:.2f}' if box_angle else 'N/A'}, "
@@ -66,12 +75,12 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
 
         cv2.putText(
             frame, 
-            f"{f'{(90 - final_angle):.{angle_precision}f}' if final_angle is not None else 'N/A'}",
-            (50, 100),                # 1. Bumped Y coordinate down slightly so large text doesn't clip off-screen
-            cv2.FONT_HERSHEY_SIMPLEX, # 2. Explicitly named the font type
-            2.0,                      # 3. FONT SCALE (Bigger number = Bigger text, default was 1.0 or 2.0)
-            (0, 255, 0),              # 4. COLOR (Green)
-            4                         # 5. THICKNESS (Higher number = Thicker/Bolder text, default was 1 or 2)
+            f"{f'{(90 - final_angle):+.{angle_precision}f}' if final_angle is not None else 'N/A'}",
+            (50, 100),                
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            2.0,                      
+            (0, 255, 0),              
+            4                         
         )
             
         cv2.imshow("Main View", frame)
@@ -93,9 +102,67 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
         if key == ord('q'): 
             break
 
-def test():
-    # testing out certain images and angles with box vs. line logic and accuracy
-    a = 1
+    # --- CLEANUP VIDEO WINDOWS ---
+    cap.release()
+    cv2.destroyAllWindows()
+    cv2.waitKey(1) # <--- UI THREAD PATCH: Gives macOS a moment to fully close the OpenCV window loop
+    cv2.waitKey(1)
+
+    # --- GENERATE AND SAVE THE GRAPH AFTER VIDEO CLOSES ---
+    clean_angle_log = [x for x in angle_history_log if not np.isnan(x)]
+
+    if clean_angle_log:
+        print("Rendering your Stroke Profile Graph to file...")
+        
+        plt.figure(figsize=(10, 5)) 
+        
+        # 1. Plot the data first
+        plt.plot(clean_angle_log, color='blue', linewidth=2, label='Cue Angle')
+        
+        initial_aim_angle = clean_angle_log[0]
+
+        # 2. Draw the baseline
+        plt.axhline(y=initial_aim_angle, color='red', linestyle='--', alpha=0.6, label='Initial Line of Aim')
+        
+        # 3. FIX: Dynamically center the Y-axis limits FIRST using max() so the window is wide enough
+        # We find the furthest absolute deviation from the initial aim angle
+        deviations = [abs(x - initial_aim_angle) for x in clean_angle_log]
+        max_deviation = max(max(deviations), 2.0) # Ensure a minimum window height of 2 degrees
+        
+        plt.ylim(initial_aim_angle - max_deviation - 0.5, initial_aim_angle + max_deviation + 0.5) 
+
+        # 4. FIX: Let Matplotlib generate the final layout ticks *after* limits are set
+        ax = plt.gca()
+        # Trigger a draw behind the scenes so Matplotlib populates the real ticks for our new ylims
+        plt.gcf().canvas.draw() 
+        
+        current_ticks = list(ax.get_yticks())
+
+        # Only append if it's not already closely represented on the axis
+        if not any(np.isclose(initial_aim_angle, tick, atol=0.2) for tick in current_ticks):
+            current_ticks.append(initial_aim_angle)
+            
+        # Explicitly apply the combined list
+        plt.yticks(current_ticks)
+
+        # Add labels and styling
+        plt.title("Snooker Stroke Profile Analysis", fontsize=14, fontweight='bold')
+        plt.xlabel("Time (Frames)", fontsize=12)
+        plt.ylabel("Deviation Angle (Degrees)\n← Bottom-Left  |  Bottom-Right →", fontsize=12)
+        
+        plt.grid(True, linestyle=':', alpha=0.6)
+        plt.legend(loc='upper right')
+        
+        # Save straight to your project folder
+        output_filename = f"output/stroke_profile.png"
+        plt.savefig(output_filename, dpi=300, bbox_inches='tight')
+        plt.close() 
+        
+        print(f" Success! Your graph has been saved as '{output_filename}' in your project folder.")
+    else:
+        print("No valid tracking data to plot.")
+
+
 
 
 if __name__ == "__main__":
