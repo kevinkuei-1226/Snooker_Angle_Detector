@@ -166,10 +166,27 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
 
 
 if __name__ == "__main__":
-    video_path = "Data/20260620 EB Birds eye view 1.mp4"
-    pixel_threshold_range = list(range(100,256,1))
-    main(video_path=video_path,
-         pixel_threshold_range=pixel_threshold_range,
-         optimal_window_size=30,
-         angle_precision=1,
-         buffer_size=5)
+
+    image_path = "Data/20260620 EB Birds Eye view first frame.png"
+
+    frame = cv2.imread(image_path)
+    # 2. Setup ROI
+    roi = cv2.selectROI("Select ROI", frame, False)
+    x, y, w, h = int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3])
+
+    cropped_first_frame = frame[y:y+h, x:x+w]
+
+    engine = CueAngleEngine(buffer_size=5) 
+
+    x_pos, y_pos = engine.get_position(cropped_first_frame)
+
+    print(f"x of white: {x_pos}, y of white: {y_pos}")
+
+
+    # video_path = "Data/20260620 EB Birds eye view 1.mp4"
+    # pixel_threshold_range = list(range(100,256,1))
+    # main(video_path=video_path,
+    #      pixel_threshold_range=pixel_threshold_range,
+    #      optimal_window_size=30,
+    #      angle_precision=1,
+    #      buffer_size=5)

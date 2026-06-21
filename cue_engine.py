@@ -18,8 +18,52 @@ class CueAngleEngine:
     # finds the center position of the white paper in the given image
     # returns the position in image coordinates
 
-    def get_position(self):
-        a = 1
+    def get_position(self,
+                     image):
+        box_roi = image.copy()
+
+
+        # ==========================================
+        # STEP 3: COMPUTER VISION TRACKING
+        # ==========================================
+
+        # threshold method that looks at brightness, doesn't work as well when hand is in the way
+        
+        gray = cv2.cvtColor(box_roi, cv2.COLOR_BGR2GRAY)
+        
+        # 1. Apply a heavy blur to smear the wood grain
+        blurred = cv2.GaussianBlur(gray, (15, 15), 0)
+        
+        # 2. Strict Threshold: Only the absolute brightest pixels survive
+        _, thresh = cv2.threshold(blurred, self.threshold, 255, cv2.THRESH_BINARY)
+        
+        # 3. Find the outlines (contours)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        
+        if contours:
+            # 1. Find your largest contour as usual
+            largest_blob = max(contours, key=cv2.contourArea)
+
+            # 2. Calculate the spatial moments of the largest contour
+            M = cv2.moments(largest_blob)
+
+            # 3. Prevent a division-by-zero error (in case the blob has an area of 0 pixels)
+            if M["m00"] != 0:
+                # Calculate the X and Y coordinates of the center of mass
+                center_x = int(M["m10"] / M["m00"])
+                center_y = int(M["m01"] / M["m00"])
+                
+                print(f"Center Mass Position: X={center_x}, Y={center_y}")
+                
+                # Optional: Draw a small red dot right at the center of mass on your frame
+                cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
+                cv2.imshow("Cue Tracker Display", box_roi)
+                cv2.waitKey(0)
+            else:
+                center_x, center_y = None, None
+        
+        return center_x, center_y
 
     # ================================================================================================
     # based on a provided image that should contain a white paper surrounding the cue,
