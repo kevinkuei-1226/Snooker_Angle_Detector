@@ -1,14 +1,9 @@
-Current TODO:
-    1. test out the new braces rubber bands
-        - take some pictures when the braces are attached to the cue at different places for later testing on constructing a straight line
-        - also take pictures at different angles for validation
+Can add another tracking that tracks the center of the white blob, acting as a rough estimate of where the cue is.
+with that, can be added to the plot with a secondary axis on where the cue is at each moment.
 
+Further robustness testing on selecting ROI.
+need some validation on ROI, and think about optimizing region selection as well
 
+On the paper device, try to make the paper fit tightly to the cue, also think of other materials that work better
 
-
-Ideas:
-    
-
-
-Validation:
-    1. the angles of the lines produced at each frame should be fairly continuous from frame to frame, and is a good proxy if it breaks
+final_score calculation in the function find_optimal_threshold need some testing
