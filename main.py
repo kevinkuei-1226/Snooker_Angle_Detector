@@ -30,11 +30,16 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
     print(f"optimal threshold: {opt_threshold}")
 
     angle_history_log = []
+    Position_log = []
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret: break
         
+        # tracking position of the white paper
+        x_pos, y_pos = engine.get_position(image=frame[y:y+h, x:x+w])
+        Position_log.append([x_pos, y_pos])
+
         # 4. Call the engine
         box_angle, line_angle = engine.get_angle(cropped_image=frame[y:y+h, x:x+w],
                                                  pixel_brightness_threshold=opt_threshold)
@@ -114,44 +119,65 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
     if clean_angle_log:
         print("Rendering your Stroke Profile Graph to file...")
         
-        plt.figure(figsize=(10, 5)) 
+        # 1. Initialize the main figure and primary axis (ax1)
+        fig, ax1 = plt.subplots(figsize=(10, 5)) 
         
-        # 1. Plot the data first
-        plt.plot(clean_angle_log, color='blue', linewidth=2, label='Cue Angle')
+        # --- PRIMARY AXIS (Y1): CUE ANGLE ---
+        # Plot the primary data line
+        line1 = ax1.plot(clean_angle_log, color='blue', linewidth=2, label='Cue Angle')
         
         initial_aim_angle = clean_angle_log[0]
-
-        # 2. Draw the baseline
-        plt.axhline(y=initial_aim_angle, color='red', linestyle='--', alpha=0.6, label='Initial Line of Aim')
+        # Draw the baseline
+        ax1.axhline(y=initial_aim_angle, color='blue', linestyle='--', alpha=0.4)
         
-        # 3. FIX: Dynamically center the Y-axis limits FIRST using max() so the window is wide enough
-        # We find the furthest absolute deviation from the initial aim angle
+        # Centering the primary Y-axis limits
         deviations = [abs(x - initial_aim_angle) for x in clean_angle_log]
-        max_deviation = max(max(deviations), 2.0) # Ensure a minimum window height of 2 degrees
-        
-        plt.ylim(initial_aim_angle - max_deviation - 0.5, initial_aim_angle + max_deviation + 0.5) 
+        max_deviation = max(max(deviations), 2.0) 
+        ax1.ylim_val = (initial_aim_angle - max_deviation - 0.5, initial_aim_angle + max_deviation + 0.5)
+        ax1.set_ylim(ax1.ylim_val) 
 
-        # 4. FIX: Let Matplotlib generate the final layout ticks *after* limits are set
-        ax = plt.gca()
-        # Trigger a draw behind the scenes so Matplotlib populates the real ticks for our new ylims
+        # Add labels for primary axis
+        ax1.set_title("Snooker Stroke Profile & Position Analysis", fontsize=14, fontweight='bold')
+        ax1.set_xlabel("Time (Frames)", fontsize=12)
+        ax1.set_ylabel("Deviation Angle (Degrees)\n← Bottom-Left  |  Bottom-Right →", color='blue', fontsize=12)
+        ax1.tick_params(axis='y', labelcolor='blue')
+        ax1.grid(True, linestyle=':', alpha=0.6)
+
+        # Let Matplotlib generate layout ticks, then append initial aim
         plt.gcf().canvas.draw() 
-        
-        current_ticks = list(ax.get_yticks())
-
-        # Only append if it's not already closely represented on the axis
+        current_ticks = list(ax1.get_yticks())
         if not any(np.isclose(initial_aim_angle, tick, atol=0.2) for tick in current_ticks):
             current_ticks.append(initial_aim_angle)
-            
-        # Explicitly apply the combined list
-        plt.yticks(current_ticks)
+        ax1.set_yticks(current_ticks)
 
-        # Add labels and styling
-        plt.title("Snooker Stroke Profile Analysis", fontsize=14, fontweight='bold')
-        plt.xlabel("Time (Frames)", fontsize=12)
-        plt.ylabel("Deviation Angle (Degrees)\n← Bottom-Left  |  Bottom-Right →", fontsize=12)
+        # --- SECONDARY AXIS (Y2): STANDARDIZED POSITION ---
+        # Filter Position_log to match frame-for-frame with non-nan angles if necessary, 
+        # but extracting Y-positions here assuming consecutive frame tracking:
+        raw_y_positions = [pos[1] for idx, pos in enumerate(Position_log) if not np.isnan(angle_history_log[idx])]
         
-        plt.grid(True, linestyle=':', alpha=0.6)
-        plt.legend(loc='upper right')
+        if raw_y_positions:
+            # Standardize: Set initial position as 0, map relative drift max step to 1.0/-1.0 range
+            initial_y = raw_y_positions[0]
+            y_offsets = [y - initial_y for y in raw_y_positions]
+            max_offset = max(max([abs(o) for o in y_offsets]), 1.0) # avoid division by zero
+            
+            # Scale to [-1.0, 1.0]
+            standardized_y = [o / max_offset for o in y_offsets]
+            
+            # Create the twin y-axis sharing the same x-axis
+            ax2 = ax1.twinx()
+            line2 = ax2.plot(standardized_y, color='purple', linewidth=1.5, linestyle='-.', label='Sleeve Y-Pos (Normalized)')
+            
+            ax2.set_ylabel("Standardized Sleeve Position\n← Closer to Bridge  |  Closer to Grip →", color='purple', fontsize=12)
+            ax2.tick_params(axis='y', labelcolor='purple')
+            ax2.set_ylim(-1.2, 1.2) # Set clean structural boundary bounds for [-1, 1] data
+            
+            # Combine legends from both axes seamlessly
+            lines = line1 + line2
+            labels = [l.get_label() for l in lines]
+            ax1.legend(lines, labels, loc='upper right')
+        else:
+            ax1.legend(loc='upper right')
         
         # Save straight to your project folder
         output_filename = f"output/stroke_profile.png"
@@ -167,26 +193,10 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
 
 if __name__ == "__main__":
 
-    image_path = "Data/20260620 EB Birds Eye view first frame.png"
-
-    frame = cv2.imread(image_path)
-    # 2. Setup ROI
-    roi = cv2.selectROI("Select ROI", frame, False)
-    x, y, w, h = int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3])
-
-    cropped_first_frame = frame[y:y+h, x:x+w]
-
-    engine = CueAngleEngine(buffer_size=5) 
-
-    x_pos, y_pos = engine.get_position(cropped_first_frame)
-
-    print(f"x of white: {x_pos}, y of white: {y_pos}")
-
-
-    # video_path = "Data/20260620 EB Birds eye view 1.mp4"
-    # pixel_threshold_range = list(range(100,256,1))
-    # main(video_path=video_path,
-    #      pixel_threshold_range=pixel_threshold_range,
-    #      optimal_window_size=30,
-    #      angle_precision=1,
-    #      buffer_size=5)
+    video_path = "Data/20260620 EB Birds eye view 1.mp4"
+    pixel_threshold_range = list(range(100,256,1))
+    main(video_path=video_path,
+         pixel_threshold_range=pixel_threshold_range,
+         optimal_window_size=30,
+         angle_precision=1,
+         buffer_size=5)

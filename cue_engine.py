@@ -54,12 +54,12 @@ class CueAngleEngine:
                 center_x = int(M["m10"] / M["m00"])
                 center_y = int(M["m01"] / M["m00"])
                 
-                print(f"Center Mass Position: X={center_x}, Y={center_y}")
+                # print(f"Center Mass Position: X={center_x}, Y={center_y}")
                 
-                # Optional: Draw a small red dot right at the center of mass on your frame
-                cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
-                cv2.imshow("Cue Tracker Display", box_roi)
-                cv2.waitKey(0)
+                # # Optional: Draw a small red dot right at the center of mass on your frame
+                # cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
+                # cv2.imshow("Cue Tracker Display", box_roi)
+                # cv2.waitKey(0)
             else:
                 center_x, center_y = None, None
         
