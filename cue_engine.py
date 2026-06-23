@@ -3,6 +3,7 @@ import numpy as np
 import statistics
 from collections import deque
 import math
+import Image_Util as Im_Util
 # import time
 # import itertools
 
@@ -21,24 +22,11 @@ class CueAngleEngine:
     def get_position(self,
                      image):
         box_roi = image.copy()
-
-
-        # ==========================================
-        # STEP 3: COMPUTER VISION TRACKING
-        # ==========================================
-
-        # threshold method that looks at brightness, doesn't work as well when hand is in the way
-        
-        gray = cv2.cvtColor(box_roi, cv2.COLOR_BGR2GRAY)
-        
-        # 1. Apply a heavy blur to smear the wood grain
-        blurred = cv2.GaussianBlur(gray, (15, 15), 0)
-        
-        # 2. Strict Threshold: Only the absolute brightest pixels survive
-        _, thresh = cv2.threshold(blurred, self.threshold, 255, cv2.THRESH_BINARY)
         
         # 3. Find the outlines (contours)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = Im_Util.get_Contours(roi=box_roi,
+                                           method="grayScale",
+                                           params=[self.threshold, [15, 15]])
 
         center_x, center_y = None, None
         
@@ -220,3 +208,10 @@ class CueAngleEngine:
         
         # Return the clean average of our history window
         return np.mean(history_buffer)
+    
+
+if __name__ == "__main__":
+    test_image = cv2.imread("output/frame_11.png")
+    CA = CueAngleEngine(threshold=179)
+
+    print(CA.get_position(image=test_image))
