@@ -1,5 +1,4 @@
-Can add another tracking that tracks the center of the white blob, acting as a rough estimate of where the cue is.
-with that, can be added to the plot with a secondary axis on where the cue is at each moment.
+
 
 Further robustness testing on selecting ROI.
 need some validation on ROI, and think about optimizing region selection as well
@@ -7,3 +6,12 @@ need some validation on ROI, and think about optimizing region selection as well
 On the paper device, try to make the paper fit tightly to the cue, also think of other materials that work better
 
 final_score calculation in the function find_optimal_threshold need some testing
+
+add in a baseline angle at the start of frame and adjust later angles to be relative to starting position
+(this assumes initial position is good, but using other methods like CB-OB line might cause other inaccuracies)
+
+change the buffer window to using actual time elapsed, now is using buffersize = 5 but fps will change its robustness. calculate buffer to span maybe 0.1 seconds for any fps smoothing to work.
+
+Add an automatic outlier rejection: if previous angle output and current angle output differ by more than 5 degrees (up for more scrutiny) then it must be faulty, drop or guess the value in this case.
+
+Move the code related to creating plots into cueAngleEngine since that is where the data is stored and reduces cluttering.

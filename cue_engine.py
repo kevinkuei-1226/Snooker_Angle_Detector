@@ -40,6 +40,7 @@ class CueAngleEngine:
         # 3. Find the outlines (contours)
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        center_x, center_y = None, None
         
         if contours:
             # 1. Find your largest contour as usual
@@ -60,8 +61,6 @@ class CueAngleEngine:
                 # cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
                 # cv2.imshow("Cue Tracker Display", box_roi)
                 # cv2.waitKey(0)
-            else:
-                center_x, center_y = None, None
         
         return center_x, center_y
 
@@ -80,7 +79,7 @@ class CueAngleEngine:
 
 
         # ==========================================
-        # STEP 3: COMPUTER VISION TRACKING
+        # COMPUTER VISION TRACKING
         # ==========================================
 
         # threshold method that looks at brightness, doesn't work as well when hand is in the way

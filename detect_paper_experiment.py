@@ -114,6 +114,7 @@ def track_white_paper_blob(image_path,
 
         # 2. Split the HSV image into separate channels
         h, s, v = cv2.split(hsv)
+ 
 
         # 3. Apply Median Blur to the Value channel only
         # This smooths out the glare without messing up the color/saturation data
@@ -123,9 +124,12 @@ def track_white_paper_blob(image_path,
         hsv_blurred = cv2.merge([h, s, v_blurred])
 
         # 5. Now create your mask using the blurred HSV data
-        lower_color_bound = np.array([161, 76, 204]) 
-        upper_color_bound = np.array([181, 255, 255]) # Tightened upper bound
+        lower_color_bound = np.array([161, 110, 0]) 
+        upper_color_bound = np.array([181, 130, 255]) # Tightened upper bound
         mask = cv2.inRange(hsv_blurred, lower_color_bound, upper_color_bound)
+
+        cv2.imshow("masked with hsv", mask)
+        cv2.waitKey(0)
         # 5. Find contours on the mask
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -136,6 +140,7 @@ def track_white_paper_blob(image_path,
 
     if contours:
         # Find the largest white shape by area
+        print("contour found")
         largest_blob = max(contours, key=cv2.contourArea)
 
         if cv2.contourArea(largest_blob) > 20:
@@ -184,12 +189,12 @@ def track_white_paper_blob(image_path,
     # Update the final image with the yellow box
     # display_img[y:y+h, x:x+w] = box_roi
     display_img = box_roi.copy()
-    #cv2.rectangle(display_img, (x, y), (x+w, y+h), (0, 255, 255), 2)
+    # cv2.rectangle(display_img, (x, y), (x+w, y+h), (0, 255, 255), 2)
 
     cv2.imshow("Final Tracking vs Validation", display_img)
-    cv2.imshow("Grayed version", gray)
-    cv2.imshow("Blurred version", blurred)
-    cv2.imshow("Pixels survived after threshold", thresh)
+    # cv2.imshow("Grayed version", gray)
+    # cv2.imshow("Blurred version", blurred)
+    # cv2.imshow("Pixels survived after threshold", thresh)
     
     # don't wait key when doing validation, uncomment when wanting to view result before destroying windows
     cv2.waitKey(0)
@@ -205,9 +210,14 @@ if __name__ == "__main__":
     # Ensure this matches the name of your uploaded test file
     # test_image = "Data/Cue with Paper 3.jpeg" # 99.87 degrees from validation, or or 80.13 degrees from validation
     # test_image = "Data/Cue with Paper 5.jpeg" # 86.05 degrees from validation
-    test_image = "Data/20260620 EB Birds Eye view first frame.png"
 
-    red_box_angle, blue_line_angle = track_white_paper_blob(test_image, 
-                                                            pixel_brightness_threshold=174, 
-                                                            cropping_box=None,
-                                                            draw_validation_line=False)
+    # red_box_angle, blue_line_angle = track_white_paper_blob(image_path="output/frame_11.png",
+    #                                                         pixel_brightness_threshold=164, 
+    #                                                         cropping_box=None,
+    #                                                         draw_validation_line=False)
+
+    track_white_paper_blob(image_path="Data/sticky note 2.jpeg",
+                           pixel_brightness_threshold=None, 
+                           cropping_box=None,
+                           draw_validation_line=True)
+

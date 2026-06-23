@@ -1,9 +1,38 @@
 import cv2
 import numpy as np
+import time
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from cue_engine import CueAngleEngine # <--- This is the link!
+
+def get_frame(video_path,
+              target_frame
+              ):
+
+    cap = cv2.VideoCapture(video_path)
+
+    # 1. Jump to the targeted frame
+    cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
+
+    # 2. Read the frame
+    ret, frame = cap.read()
+
+    cap.release()
+
+    if ret:
+        # 3. Define your output path and save it as a PNG
+        output_filename = f"output/frame_{target_frame}.png"
+        
+        # cv2.imwrite saves the array data straight to a file
+        success = cv2.imwrite(output_filename, frame)
+        
+        if success:
+            print(f"Success! Saved frame {target_frame} to '{output_filename}'")
+        else:
+            print("Error: The frame was read, but could not be saved to disk. Check your directory permissions.")
+    else:
+        print(f"Error: Could not read frame {target_frame}.")
 
 
 def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, angle_precision=0):
@@ -25,18 +54,20 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
                                                   window_size=optimal_window_size)
 
     # taking mid threshold here
-    opt_threshold = opt_threshold_stats['start'] + int(optimal_window_size / 2)
+    opt_threshold = opt_threshold_stats['start'] + int(optimal_window_size)
 
     print(f"optimal threshold: {opt_threshold}")
 
     angle_history_log = []
     Position_log = []
+    frame_num = 1
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret: break
         
         # tracking position of the white paper
+        
         x_pos, y_pos = engine.get_position(image=frame[y:y+h, x:x+w])
         Position_log.append([x_pos, y_pos])
 
@@ -69,10 +100,13 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
             angle_history_log.append(float('nan'))
 
         print(
+            f"frame number: {frame_num}"
             f"Unsmoothed Box Angle: {f'{90 - box_angle:.2f}' if box_angle else 'N/A'}, "
             f"Unsmoothed Line Angle: {f'{abs(90 - line_angle):.2f}' if line_angle else 'N/A'}, "
             f"Final Angle: {f'{90 - final_angle:.2f}' if final_angle is not None else 'N/A'}"
         )
+
+        frame_num += 1
         
 
 
@@ -134,7 +168,7 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
         deviations = [abs(x - initial_aim_angle) for x in clean_angle_log]
         max_deviation = max(max(deviations), 2.0) 
         ax1.ylim_val = (initial_aim_angle - max_deviation - 0.5, initial_aim_angle + max_deviation + 0.5)
-        ax1.set_ylim(ax1.ylim_val) 
+        ax1.set_ylim(ax1.ylim_val)
 
         # Add labels for primary axis
         ax1.set_title("Snooker Stroke Profile & Position Analysis", fontsize=14, fontweight='bold')
@@ -193,10 +227,14 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
 
 if __name__ == "__main__":
 
-    video_path = "Data/20260620 EB Birds eye view 1.mp4"
-    pixel_threshold_range = list(range(100,256,1))
-    main(video_path=video_path,
-         pixel_threshold_range=pixel_threshold_range,
-         optimal_window_size=30,
-         angle_precision=1,
-         buffer_size=5)
+    # video_path = "Data/20260620 EB Birds eye view 1.mp4"
+    # pixel_threshold_range = list(range(100,256,1))
+    # main(video_path=video_path,
+    #      pixel_threshold_range=pixel_threshold_range,
+    #      optimal_window_size=30,
+    #      angle_precision=1,
+    #      buffer_size=5)
+    
+    get_frame(video_path="Data/20260620 EB Birds eye view 1.mp4",
+              target_frame=11
+    )
