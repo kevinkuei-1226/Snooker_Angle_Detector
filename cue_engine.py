@@ -42,6 +42,7 @@ class CueAngleEngine:
 
     def get_position(self,
                      image,
+                     show_results=False
                      ):
         box_roi = image.copy()
         
@@ -69,9 +70,10 @@ class CueAngleEngine:
                 # print(f"Center Mass Position: X={center_x}, Y={center_y}")
                 
                 # Show annotated image
-                cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
-                cv2.imshow("Cue Tracker Display", box_roi)
-                cv2.waitKey(0)
+                if show_results:
+                    cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
+                    cv2.imshow("Position display (press any key to close)", box_roi)
+                    cv2.waitKey(0)
         
         return center_x, center_y
 
@@ -81,7 +83,8 @@ class CueAngleEngine:
     # arg 1: the angle estimated by drawing a rectangle on slip (a bit more robust)
     # arg 2: linear regression through all white pixels detected from image
     def get_angle(self,
-                  image
+                  image,
+                  show_results=False
                 ):
     
 
@@ -130,7 +133,24 @@ class CueAngleEngine:
                 # Shift it so pointing right is 0°, straight up is 90°, and pointing left is 180°
                 if line_angle < 0:
                     line_angle += 180
+                
+                if show_results:
+                    # draw blue line
 
+                    if vy != 0:
+                        
+                        t_top = (0 - cy) / vy
+                        x_top = int(cx + t_top * vx)
+                        t_bottom = (box_roi.shape[0] - cy) / vy
+                        x_bottom = int(cx + t_bottom * vx)
+                        cv2.line(box_roi, (x_top, 0), (x_bottom, box_roi.shape[0]), (255, 0, 0), 2)
+                    
+                    # draw red box
+                    box = cv2.boxPoints(rect)
+                    box = np.int32(box) 
+                    cv2.drawContours(box_roi, [box], 0, (0, 0, 255), 2)
+                    display_img = box_roi.copy()
+                    cv2.imshow("Red & Blue Tracking", display_img)
 
         # returns red box vertical angle an blue line angle
         if 'box_angle' in locals() and 'line_angle' in locals():
@@ -207,5 +227,5 @@ if __name__ == "__main__":
     CA = CueAngleEngine(method="grayScale", 
                         threshold=179)
 
-    print(CA.get_position(image=test_image))
-    print(CA.get_angle(image=test_image))
+    print(CA.get_position(image=test_image, show_results=False))
+    print(CA.get_angle(image=test_image, show_results=True))
