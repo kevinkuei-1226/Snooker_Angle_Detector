@@ -11,10 +11,14 @@ import numpy as np
 
 # for "HSV":       params[0] = 3-value-tuple of HSV lower bound
 #                  params[1] = 3-value-tuple of HSV upper bound
+#                  params[2] = value for medianBlur
 
 def get_Contours(roi,
                 method,
                 params):
+    
+
+
     if method == "grayScale": # filters by brightness
 
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -22,11 +26,11 @@ def get_Contours(roi,
         _, thresh = cv2.threshold(blurred, params[0], 255, cv2.THRESH_BINARY)
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    else: # HSV filtering method
+    elif method == "HSV": # HSV filtering method
 
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(hsv)
-        v_blurred = cv2.medianBlur(v, 5)
+        v_blurred = cv2.medianBlur(v, params[2])
         hsv_blurred = cv2.merge([h, s, v_blurred]) # merge blur and HSV separation
 
         # create mask using the blurred HSV data
@@ -34,5 +38,6 @@ def get_Contours(roi,
         upper_color_bound = np.array(params[1])
         mask = cv2.inRange(hsv_blurred, lower_color_bound, upper_color_bound)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+
+
     return contours

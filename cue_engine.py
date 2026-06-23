@@ -8,8 +8,29 @@ import Image_Util as Im_Util
 # import itertools
 
 class CueAngleEngine:
-    def __init__(self, threshold=200, buffer_size=5):
+    def __init__(self, 
+                 method="grayScale",
+                 threshold=200, 
+                 buffer_size=5,
+                 Gauss_Blur=[15,15],
+                 HSV_lower=None,
+                 HSV_upper=None,
+                 medianBlur=5):
         self.threshold = threshold
+        self.buffer_size = buffer_size
+        self.Gauss_Blur = Gauss_Blur
+        self.HSV_lower = HSV_lower
+        self.HSV_upper = HSV_upper
+        self.method = method
+        
+        if method == "grayScale":
+            self.params = [threshold, Gauss_Blur]
+        elif method == "HSV":
+            self.params = [HSV_lower, HSV_upper,medianBlur]
+        else:
+            self.params = [threshold, Gauss_Blur]
+            print("no valid method provided, will default to grayScale method")
+
         # Create history buffers for both angles (stores the last 'buffer_size' frames)
         self.box_history = deque(maxlen=buffer_size)
         self.line_history = deque(maxlen=buffer_size)
@@ -20,13 +41,15 @@ class CueAngleEngine:
     # returns the position in image coordinates
 
     def get_position(self,
-                     image):
+                     image,
+                     ):
         box_roi = image.copy()
         
         # 3. Find the outlines (contours)
+        # currently just defaulting to grayScale version, can change later
         contours = Im_Util.get_Contours(roi=box_roi,
-                                           method="grayScale",
-                                           params=[self.threshold, [15, 15]])
+                                           method=self.method,
+                                           params=self.params)
 
         center_x, center_y = None, None
         
@@ -45,10 +68,10 @@ class CueAngleEngine:
                 
                 # print(f"Center Mass Position: X={center_x}, Y={center_y}")
                 
-                # # Optional: Draw a small red dot right at the center of mass on your frame
-                # cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
-                # cv2.imshow("Cue Tracker Display", box_roi)
-                # cv2.waitKey(0)
+                # Show annotated image
+                cv2.circle(box_roi, (center_x, center_y), 5, (0, 0, 255), -1)
+                cv2.imshow("Cue Tracker Display", box_roi)
+                cv2.waitKey(0)
         
         return center_x, center_y
 
@@ -58,50 +81,19 @@ class CueAngleEngine:
     # arg 1: the angle estimated by drawing a rectangle on slip (a bit more robust)
     # arg 2: linear regression through all white pixels detected from image
     def get_angle(self,
-                  cropped_image, 
-                  pixel_brightness_threshold=None,
+                  image
                 ):
     
 
-        box_roi = cropped_image.copy()
+        box_roi = image.copy()
 
 
-        # ==========================================
-        # COMPUTER VISION TRACKING
-        # ==========================================
+        # get contours
 
-        # threshold method that looks at brightness, doesn't work as well when hand is in the way
-        if pixel_brightness_threshold is not None:
-
-            gray = cv2.cvtColor(box_roi, cv2.COLOR_BGR2GRAY)
-            
-            # 1. Apply a heavy blur to smear the wood grain
-            blurred = cv2.GaussianBlur(gray, (15, 15), 0)
-            
-            # 2. Strict Threshold: Only the absolute brightest pixels survive
-            _, thresh = cv2.threshold(blurred, pixel_brightness_threshold, 255, cv2.THRESH_BINARY)
-            
-            # 3. Find the outlines (contours)
-            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        else: # HSV filtering method, more robust when using a special color
-            hsv = cv2.cvtColor(box_roi, cv2.COLOR_BGR2HSV)
-
-            # 2. Split the HSV image into separate channels
-            h, s, v = cv2.split(hsv)
-
-            # 3. Apply Median Blur to the Value channel only
-            # This smooths out the glare without messing up the color/saturation data
-            v_blurred = cv2.medianBlur(v, 5)
-
-            # 4. Merge back together (or just use the v_blurred channel for your mask)
-            hsv_blurred = cv2.merge([h, s, v_blurred])
-
-            # 5. Now create your mask using the blurred HSV data
-            lower_color_bound = np.array([161, 76, 204]) 
-            upper_color_bound = np.array([181, 255, 255]) # Tightened upper bound
-            mask = cv2.inRange(hsv_blurred, lower_color_bound, upper_color_bound)
-            # 5. Find contours on the mask
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = Im_Util.get_Contours(roi=box_roi,
+                                        method=self.method,
+                                        params=self.params)
+  
         
         if contours:
             # Find the largest white shape by area
@@ -211,7 +203,9 @@ class CueAngleEngine:
     
 
 if __name__ == "__main__":
-    test_image = cv2.imread("output/frame_11.png")
-    CA = CueAngleEngine(threshold=179)
+    test_image = cv2.imread("output/frame_11_cropped.png")
+    CA = CueAngleEngine(method="grayScale", 
+                        threshold=179)
 
     print(CA.get_position(image=test_image))
+    print(CA.get_angle(image=test_image))
