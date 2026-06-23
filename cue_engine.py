@@ -150,7 +150,11 @@ class CueAngleEngine:
                     box = np.int32(box) 
                     cv2.drawContours(box_roi, [box], 0, (0, 0, 255), 2)
                     display_img = box_roi.copy()
+
+                    # show annotated image
                     cv2.imshow("Red & Blue Tracking", display_img)
+                    cv2.waitKey(0)
+
 
         # returns red box vertical angle an blue line angle
         if 'box_angle' in locals() and 'line_angle' in locals():
