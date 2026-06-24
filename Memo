@@ -1,7 +1,8 @@
+might need an array for the angles history 
 
 
-Further robustness testing on selecting ROI.
-need some validation on ROI, and think about optimizing region selection as well
+
+To avoid manual ROI selection, might be better to use special colors for the paper that normally doesn't appear on the snooker table, that way there is no need for a particular ROI and only birds eye view is necessary
 
 On the paper device, try to make the paper fit tightly to the cue, also think of other materials that work better
 

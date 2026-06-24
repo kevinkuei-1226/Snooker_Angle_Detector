@@ -7,7 +7,7 @@ import Image_Util as Im_Util
 # import time
 # import itertools
 
-class CueAngleEngine:
+class Cue_Angle_Session:
     def __init__(self, 
                  method="grayScale",
                  threshold=200, 
@@ -32,8 +32,8 @@ class CueAngleEngine:
             print("no valid method provided, will default to grayScale method")
 
         # Create history buffers for both angles (stores the last 'buffer_size' frames)
-        self.box_history = deque(maxlen=buffer_size)
-        self.line_history = deque(maxlen=buffer_size)
+        self.box_buffer = deque(maxlen=buffer_size)
+        self.line_buffer = deque(maxlen=buffer_size)
 
 
     # ================================================================================================
