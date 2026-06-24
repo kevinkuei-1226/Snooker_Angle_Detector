@@ -242,7 +242,7 @@ class Cue_Angle_Session:
             self.box_buffer.append(new_box_angle)
         if new_line_angle:
             self.line_buffer.append(new_line_angle)
-        if new_position:
+        if new_position and new_position[0] and new_position[1]:
             self.position_buffer.append(new_position)
         
         # Append to master session logs
