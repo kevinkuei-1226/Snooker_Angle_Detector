@@ -31,7 +31,9 @@ class Cue_Angle_Session:
             self.params = [threshold, Gauss_Blur]
             print("no valid method provided, will default to grayScale method")
 
-        # Create history buffers for both angles (stores the last 'buffer_size' frames)
+        # Create history & buffers for both angles (stores the last 'buffer_size' frames)
+        self.box_history = []
+        self.line_history = []
         self.box_buffer = deque(maxlen=buffer_size)
         self.line_buffer = deque(maxlen=buffer_size)
 
@@ -106,9 +108,6 @@ class Cue_Angle_Session:
                 
                 # --- 1. RED BOX LOGIC ---
                 rect = cv2.minAreaRect(largest_blob)
-                # box = cv2.boxPoints(rect)
-                # box = np.int32(box) 
-                # cv2.drawContours(box_roi, [box], 0, (0, 0, 255), 2)
                 
                 raw_box_angle = rect[2]
                 width, height = rect[1]
@@ -213,7 +212,8 @@ class Cue_Angle_Session:
     
 
     # smooth out angles in video frames for less jittering
-    def smooth_angle(self, new_angle, history_buffer):
+    # buffer size when initializing determines how much smoothing is done
+    def get_smoothed_angle(self, new_angle, history_buffer):
         """Helper method to handle the rolling average math"""
         if new_angle is None:
             # If we lose tracking for a frame, return the last known average
@@ -225,10 +225,21 @@ class Cue_Angle_Session:
         # Return the clean average of our history window
         return np.mean(history_buffer)
     
+    def update_history(self, 
+                       new_box_angle, 
+                       new_line_angle):
+        # Append to rolling buffers for live smoothing
+        self.box_buffer.append(new_box_angle)
+        self.line_buffer.append(new_line_angle)
+        
+        # Append to master session logs
+        self.box_history.append(new_box_angle)
+        self.line_history.append(new_line_angle)
+    
 
 if __name__ == "__main__":
     test_image = cv2.imread("output/frame_11_cropped.png")
-    CA = CueAngleEngine(method="grayScale", 
+    CA = Cue_Angle_Session(method="grayScale", 
                         threshold=179)
 
     print(CA.get_position(image=test_image, show_results=False))

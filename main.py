@@ -4,7 +4,7 @@ import time
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from cue_engine import CueAngleEngine # <--- This is the link!
+from Cue_Angle_Session import Cue_Angle_Session # <--- This is the link!
 
 def get_frame(video_path,
               target_frame
@@ -37,7 +37,7 @@ def get_frame(video_path,
 
 def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, angle_precision=0):
     # 1. Initialize the engine
-    engine = CueAngleEngine(buffer_size=buffer_size) 
+    engine = Cue_Angle_Session(buffer_size=buffer_size) 
     
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
@@ -58,8 +58,6 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
 
     print(f"optimal threshold: {opt_threshold}")
 
-    angle_history_log = []
-    Position_log = []
     frame_num = 1
 
     while cap.isOpened():
@@ -69,15 +67,15 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
         # tracking position of the white paper
         
         x_pos, y_pos = engine.get_position(image=frame[y:y+h, x:x+w])
-        Position_log.append([x_pos, y_pos])
+        engine.Position_log.append([x_pos, y_pos])
 
         # 4. Call the engine
         box_angle, line_angle = engine.get_angle(cropped_image=frame[y:y+h, x:x+w],
                                                  pixel_brightness_threshold=opt_threshold)
         
         # 5. Smooth them using the engine's internal memory
-        box_angle_smoothed = engine.smooth_angle(box_angle, engine.box_history)
-        line_angle_smoothed = engine.smooth_angle(line_angle, engine.line_history)
+        box_angle_smoothed = engine.smooth_angle(box_angle, engine.box_buffer)
+        line_angle_smoothed = engine.smooth_angle(line_angle, engine.line_buffer)
 
         # --- NEW SENSOR FUSION FILTERING ---
 
