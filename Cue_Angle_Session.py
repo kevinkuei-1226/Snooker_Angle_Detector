@@ -34,8 +34,10 @@ class Cue_Angle_Session:
         # Create history & buffers for both angles (stores the last 'buffer_size' frames)
         self.box_history = []
         self.line_history = []
+        self.position_history = []
         self.box_buffer = deque(maxlen=buffer_size)
         self.line_buffer = deque(maxlen=buffer_size)
+        self.position_buffer = deque(maxlen=buffer_size)
 
 
     # ================================================================================================
@@ -213,30 +215,36 @@ class Cue_Angle_Session:
 
     # smooth out angles in video frames for less jittering
     # buffer size when initializing determines how much smoothing is done
-    def get_smoothed_angle(self):
+    def get_smoothed_values(self):
         
         smoothed_box_angle = None
         smoothed_line_angle = None
-        if len(self.box_buffer) >= self.buffer_size and len(self.line_buffer) >= self.buffer_size:
+        if len(self.box_buffer) >= self.buffer_size and len(self.line_buffer) >= self.buffer_size and len(self.position_buffer) >= self.buffer_size:
             smoothed_box_angle = np.mean(self.box_buffer)
             smoothed_line_angle = np.mean(self.line_buffer)
+            smoothed_position = np.mean(self.position_buffer, axis=0)
         
 
-        return smoothed_box_angle, smoothed_line_angle
+        return smoothed_box_angle, smoothed_line_angle, smoothed_position
 
 
     # update angle history
     def update_history(self, 
                        new_box_angle, 
-                       new_line_angle):
+                       new_line_angle,
+                       new_position):
         # Append to rolling buffers for live smoothing
-        self.box_buffer.append(new_box_angle)
-        self.line_buffer.append(new_line_angle)
+        if new_box_angle:
+            self.box_buffer.append(new_box_angle)
+        if new_line_angle:
+            self.line_buffer.append(new_line_angle)
+        if new_position:
+            self.position_buffer.append(new_position)
         
         # Append to master session logs
         self.box_history.append(new_box_angle)
         self.line_history.append(new_line_angle)
-    
+        self.position_history.append(new_position)
 
 if __name__ == "__main__":
     test_image = cv2.imread("output/frame_11_cropped.png")

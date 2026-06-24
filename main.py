@@ -6,76 +6,48 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from Cue_Angle_Session import Cue_Angle_Session # <--- This is the link!
 
-def get_frame(video_path,
-              target_frame
-              ):
-
-    cap = cv2.VideoCapture(video_path)
-
-    # 1. Jump to the targeted frame
-    cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
-
-    # 2. Read the frame
-    ret, frame = cap.read()
-
-    cap.release()
-
-    if ret:
-        # 3. Define your output path and save it as a PNG
-        output_filename = f"output/frame_{target_frame}.png"
-        
-        # cv2.imwrite saves the array data straight to a file
-        success = cv2.imwrite(output_filename, frame)
-        
-        if success:
-            print(f"Success! Saved frame {target_frame} to '{output_filename}'")
-        else:
-            print("Error: The frame was read, but could not be saved to disk. Check your directory permissions.")
-    else:
-        print(f"Error: Could not read frame {target_frame}.")
-
 
 def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, angle_precision=0):
-    # 1. Initialize the engine
-    engine = Cue_Angle_Session(buffer_size=buffer_size) 
+    # 1. Initial Setup
+    CAS = Cue_Angle_Session(buffer_size=buffer_size) 
     
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
     
-    # 2. Setup ROI
     roi = cv2.selectROI("Select ROI", frame, False)
     x, y, w, h = int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3])
-
     cropped_first_frame = frame[y:y+h, x:x+w]
 
-    # 3. Calibrate Threshold
-    opt_threshold_stats = engine.find_optimal_threshold(selected_roi=cropped_first_frame,
-                                                  threshold_range=pixel_threshold_range,
-                                                  window_size=optimal_window_size)
+    # 2. Calibrate Threshold
+    opt_threshold_stats = CAS.find_optimal_threshold(selected_roi=cropped_first_frame,
+                                                        threshold_range=pixel_threshold_range,
+                                                        window_size=optimal_window_size)
 
-    # taking mid threshold here
     opt_threshold = opt_threshold_stats['start'] + int(optimal_window_size)
-
-    print(f"optimal threshold: {opt_threshold}")
 
     frame_num = 1
 
+    # 3. Read frames
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret: break
         
-        # tracking position of the white paper
+        # 3.1 tracking physics of white paper
         
-        x_pos, y_pos = engine.get_position(image=frame[y:y+h, x:x+w])
-        engine.Position_log.append([x_pos, y_pos])
-
-        # 4. Call the engine
-        box_angle, line_angle = engine.get_angle(cropped_image=frame[y:y+h, x:x+w],
+        x_pos, y_pos = CAS.get_position(image=frame[y:y+h, x:x+w])
+        box_angle, line_angle = CAS.get_angle(cropped_image=frame[y:y+h, x:x+w],
                                                  pixel_brightness_threshold=opt_threshold)
         
+        print(f"box_angle: {box_angle}, line_angle: {line_angle}")
+        # 3.2 update session history
+
+        CAS.update_history(new_box_angle=box_angle,
+                           new_line_angle=line_angle,
+                           new_position=(x_pos, y_pos))
+
         # 5. Smooth them using the engine's internal memory
-        box_angle_smoothed = engine.get_smoothed_angle(box_angle, engine.box_buffer)
-        line_angle_smoothed = engine.smooth_angle(line_angle, engine.line_buffer)
+        box_angle_smoothed, line_angle_smoothed, position_smoothed = CAS.get_smoothed_values()
+        
 
         # --- NEW SENSOR FUSION FILTERING ---
 
@@ -92,10 +64,10 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
             # Case C: They are clean and agree. Average them together to eliminate individual noise!
             final_angle = (box_angle_smoothed + line_angle_smoothed) / 2.0
 
-        if final_angle is not None:
-            angle_history_log.append(90 - final_angle)
-        else:
-            angle_history_log.append(float('nan'))
+        # if final_angle is not None:
+        #     angle_history_log.append(90 - final_angle)
+        # else:
+        #     angle_history_log.append(float('nan'))
 
         print(
             f"frame number: {frame_num}"
