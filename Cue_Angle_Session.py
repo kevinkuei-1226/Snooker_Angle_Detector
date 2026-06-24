@@ -213,18 +213,19 @@ class Cue_Angle_Session:
 
     # smooth out angles in video frames for less jittering
     # buffer size when initializing determines how much smoothing is done
-    def get_smoothed_angle(self, new_angle, history_buffer):
-        """Helper method to handle the rolling average math"""
-        if new_angle is None:
-            # If we lose tracking for a frame, return the last known average
-            return np.mean(history_buffer) if history_buffer else None
+    def get_smoothed_angle(self):
         
-        # Add new angle to the rolling window
-        history_buffer.append(new_angle)
+        smoothed_box_angle = None
+        smoothed_line_angle = None
+        if len(self.box_buffer) >= self.buffer_size and len(self.line_buffer) >= self.buffer_size:
+            smoothed_box_angle = np.mean(self.box_buffer)
+            smoothed_line_angle = np.mean(self.line_buffer)
         
-        # Return the clean average of our history window
-        return np.mean(history_buffer)
-    
+
+        return smoothed_box_angle, smoothed_line_angle
+
+
+    # update angle history
     def update_history(self, 
                        new_box_angle, 
                        new_line_angle):

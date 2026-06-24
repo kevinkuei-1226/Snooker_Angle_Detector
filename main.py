@@ -74,7 +74,7 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
                                                  pixel_brightness_threshold=opt_threshold)
         
         # 5. Smooth them using the engine's internal memory
-        box_angle_smoothed = engine.smooth_angle(box_angle, engine.box_buffer)
+        box_angle_smoothed = engine.get_smoothed_angle(box_angle, engine.box_buffer)
         line_angle_smoothed = engine.smooth_angle(line_angle, engine.line_buffer)
 
         # --- NEW SENSOR FUSION FILTERING ---
