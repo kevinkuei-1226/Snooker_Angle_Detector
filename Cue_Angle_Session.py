@@ -34,7 +34,9 @@ class Cue_Angle_Session:
         # Create history & buffers for both angles (stores the last 'buffer_size' frames)
         self.box_history = []
         self.line_history = []
+        self.final_output_history = []
         self.position_history = []
+
         self.box_buffer = deque(maxlen=buffer_size)
         self.line_buffer = deque(maxlen=buffer_size)
         self.position_buffer = deque(maxlen=buffer_size)
@@ -168,6 +170,7 @@ class Cue_Angle_Session:
     # finds the optimal threshold by finding the lowest: 
     # (variance within the specified window) + minimal difference between blue line and red box logic,
     # and returns the first threshold value in the window
+    # CURRENTLY ONLY SUPPORTS GRAYSCALE
     def find_optimal_threshold(self, 
                                selected_roi,
                                threshold_range,
@@ -177,9 +180,7 @@ class Cue_Angle_Session:
         result_array = []
         for threshold in threshold_range:
 
-            red_box_angle, blue_line_angle = self.get_angle(selected_roi, 
-                                                            pixel_brightness_threshold=threshold, 
-                                                            )
+            red_box_angle, blue_line_angle = self.get_angle(selected_roi)
             result_array.append((threshold, red_box_angle, blue_line_angle))
 
         consensus_scores = []
@@ -219,6 +220,8 @@ class Cue_Angle_Session:
         
         smoothed_box_angle = None
         smoothed_line_angle = None
+        smoothed_position = None
+
         if len(self.box_buffer) >= self.buffer_size and len(self.line_buffer) >= self.buffer_size and len(self.position_buffer) >= self.buffer_size:
             smoothed_box_angle = np.mean(self.box_buffer)
             smoothed_line_angle = np.mean(self.line_buffer)
@@ -232,7 +235,8 @@ class Cue_Angle_Session:
     def update_history(self, 
                        new_box_angle, 
                        new_line_angle,
-                       new_position):
+                       new_position,
+                       new_final_angle):
         # Append to rolling buffers for live smoothing
         if new_box_angle:
             self.box_buffer.append(new_box_angle)
@@ -245,6 +249,10 @@ class Cue_Angle_Session:
         self.box_history.append(new_box_angle)
         self.line_history.append(new_line_angle)
         self.position_history.append(new_position)
+        if new_final_angle:
+            self.final_output_history.append(new_final_angle)
+        else:
+            self.final_output_history.append(np.nan)
 
 if __name__ == "__main__":
     test_image = cv2.imread("output/frame_11_cropped.png")

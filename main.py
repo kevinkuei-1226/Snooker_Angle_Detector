@@ -9,7 +9,9 @@ from Cue_Angle_Session import Cue_Angle_Session # <--- This is the link!
 
 def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, angle_precision=0):
     # 1. Initial Setup
-    CAS = Cue_Angle_Session(buffer_size=buffer_size) 
+    CAS = Cue_Angle_Session(method="grayScale",
+                            buffer_size=buffer_size
+                            ) 
     
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
@@ -18,7 +20,7 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
     x, y, w, h = int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3])
     cropped_first_frame = frame[y:y+h, x:x+w]
 
-    # 2. Calibrate Threshold
+    # 2. Calibrate Threshold DOBLE CHECK THIS SYNTAXX
     opt_threshold_stats = CAS.find_optimal_threshold(selected_roi=cropped_first_frame,
                                                         threshold_range=pixel_threshold_range,
                                                         window_size=optimal_window_size)
@@ -35,56 +37,52 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
         # 3.1 tracking physics of white paper
         
         x_pos, y_pos = CAS.get_position(image=frame[y:y+h, x:x+w])
-        box_angle, line_angle = CAS.get_angle(cropped_image=frame[y:y+h, x:x+w],
-                                                 pixel_brightness_threshold=opt_threshold)
+        box_angle, line_angle = CAS.get_angle(image=frame[y:y+h, x:x+w])
         
-        print(f"box_angle: {box_angle}, line_angle: {line_angle}")
-        # 3.2 update session history
 
-        CAS.update_history(new_box_angle=box_angle,
-                           new_line_angle=line_angle,
-                           new_position=(x_pos, y_pos))
-
-        # 5. Smooth them using the engine's internal memory
+        # 3.2. Smooth them using the engine's internal memory
         box_angle_smoothed, line_angle_smoothed, position_smoothed = CAS.get_smoothed_values()
         
 
-        # --- NEW SENSOR FUSION FILTERING ---
+        # 3.3 Fusion Filtering
+        # checks consistency between box and line and determine whether the output is valid
 
-        if not box_angle or not line_angle:
+        if not box_angle_smoothed or not line_angle_smoothed:
             final_angle = None
-        elif box_angle == 0.00 or box_angle == 90.00:
+        elif box_angle_smoothed == 0.00 or box_angle_smoothed == 90.00:
             # Case A: The box has snapped to the grid lines (blind spot). Rely entirely on the line.
-            final_angle = line_angle_smoothed
-        elif abs(box_angle - line_angle) > 10.0:
+            final_angle = 90 - line_angle_smoothed
+        elif abs(box_angle_smoothed - line_angle_smoothed) > 10.0:
             # Case B: They wildly disagree. When moving near vertical, the box's structural axis 
             # anchor is typically more stable than fitLine's pixel slope regression.
-            final_angle = box_angle_smoothed
+            final_angle = 90 - box_angle_smoothed
         else:
             # Case C: They are clean and agree. Average them together to eliminate individual noise!
-            final_angle = (box_angle_smoothed + line_angle_smoothed) / 2.0
+            final_angle = 90 - (box_angle_smoothed + line_angle_smoothed) / 2.0
 
-        # if final_angle is not None:
-        #     angle_history_log.append(90 - final_angle)
-        # else:
-        #     angle_history_log.append(float('nan'))
 
-        print(
-            f"frame number: {frame_num}"
-            f"Unsmoothed Box Angle: {f'{90 - box_angle:.2f}' if box_angle else 'N/A'}, "
-            f"Unsmoothed Line Angle: {f'{abs(90 - line_angle):.2f}' if line_angle else 'N/A'}, "
-            f"Final Angle: {f'{90 - final_angle:.2f}' if final_angle is not None else 'N/A'}"
-        )
+        # 3.4 update session history
+        CAS.update_history(new_box_angle=box_angle,
+                           new_line_angle=line_angle,
+                           new_position=(x_pos, y_pos),
+                           new_final_angle=final_angle)
+
+        # print(
+        #     f"frame number: {frame_num}"
+        #     f"Unsmoothed Box Angle: {f'{90 - box_angle:.2f}' if box_angle else 'N/A'}, "
+        #     f"Unsmoothed Line Angle: {f'{abs(90 - line_angle):.2f}' if line_angle else 'N/A'}, "
+        #     f"Final Angle: {f'{90 - final_angle:.2f}' if final_angle is not None else 'N/A'}"
+        # )
 
         frame_num += 1
         
-
+        
 
         angle_precision = max(0, int(angle_precision))
 
         cv2.putText(
             frame, 
-            f"{f'{(90 - final_angle):+.{angle_precision}f}' if final_angle is not None else 'N/A'}",
+            f"{f'{(final_angle):+.{angle_precision}f}' if final_angle is not None else 'N/A'}",
             (50, 100),                
             cv2.FONT_HERSHEY_SIMPLEX, 
             2.0,                      
@@ -111,6 +109,8 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
         if key == ord('q'): 
             break
 
+    print(f"line_history: {CAS.line_history}")
+
     # --- CLEANUP VIDEO WINDOWS ---
     cap.release()
     cv2.destroyAllWindows()
@@ -118,7 +118,7 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
     cv2.waitKey(1)
 
     # --- GENERATE AND SAVE THE GRAPH AFTER VIDEO CLOSES ---
-    clean_angle_log = [x for x in angle_history_log if not np.isnan(x)]
+    clean_angle_log = [x for x in CAS.final_output_history if not np.isnan(x)]
 
     if clean_angle_log:
         print("Rendering your Stroke Profile Graph to file...")
@@ -157,7 +157,7 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
         # --- SECONDARY AXIS (Y2): STANDARDIZED POSITION ---
         # Filter Position_log to match frame-for-frame with non-nan angles if necessary, 
         # but extracting Y-positions here assuming consecutive frame tracking:
-        raw_y_positions = [pos[1] for idx, pos in enumerate(Position_log) if not np.isnan(angle_history_log[idx])]
+        raw_y_positions = [pos[1] for idx, pos in enumerate(CAS.position_history) if not np.isnan(CAS.final_output_history[idx])]
         
         if raw_y_positions:
             # Standardize: Set initial position as 0, map relative drift max step to 1.0/-1.0 range
@@ -197,14 +197,11 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
 
 if __name__ == "__main__":
 
-    # video_path = "Data/20260620 EB Birds eye view 1.mp4"
-    # pixel_threshold_range = list(range(100,256,1))
-    # main(video_path=video_path,
-    #      pixel_threshold_range=pixel_threshold_range,
-    #      optimal_window_size=30,
-    #      angle_precision=1,
-    #      buffer_size=5)
+    video_path = "Data/20260620 EB Birds eye view 1.mp4"
+    pixel_threshold_range = list(range(100,256,1))
+    main(video_path=video_path,
+         pixel_threshold_range=pixel_threshold_range,
+         optimal_window_size=30,
+         angle_precision=1,
+         buffer_size=5)
     
-    get_frame(video_path="Data/20260620 EB Birds eye view 1.mp4",
-              target_frame=11
-    )
