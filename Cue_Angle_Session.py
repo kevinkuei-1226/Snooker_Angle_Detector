@@ -246,9 +246,9 @@ class Cue_Angle_Session:
             self.position_buffer.append(new_position)
         
         # Append to master session logs
-        self.box_history.append(new_box_angle)
-        self.line_history.append(new_line_angle)
-        self.position_history.append(new_position)
+        self.box_history.append(new_box_angle if new_box_angle is not None else np.nan)
+        self.line_history.append(new_line_angle if new_line_angle is not None else np.nan)
+        self.position_history.append(new_position) # TODO:need to figure out how to append np.nan to individual x,y coordinates
         if new_final_angle:
             self.final_output_history.append(new_final_angle)
         else:
