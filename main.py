@@ -8,7 +8,12 @@ from Cue_Angle_Session import Cue_Angle_Session # <--- This is the link!
 import Plotting_Util as Pl_Util
 
 
-def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, angle_precision=0):
+def main(video_path,
+         pixel_threshold_range,
+         optimal_window_size,
+         buffer_size=1,
+         angle_precision=0,
+         plot_results=False):
     # 1. Initial Setup
     CAS = Cue_Angle_Session(method="grayScale",
                             buffer_size=buffer_size
@@ -121,9 +126,11 @@ def main(video_path, pixel_threshold_range, optimal_window_size, buffer_size=1, 
     # --- GENERATE AND SAVE THE GRAPH AFTER VIDEO CLOSES ---
     clean_angle_log = [x for x in CAS.final_output_history if not np.isnan(x)]
 
-    Pl_Util.plot_results(clean_angle_log)
+    if plot_results:
+        Pl_Util.plot_results(CAS=CAS,
+                             angle_log=clean_angle_log)
 
-    
+
 
 
 if __name__ == "__main__":
