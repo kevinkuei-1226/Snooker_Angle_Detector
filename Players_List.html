@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registered Players</title>
+    <link rel="stylesheet" href="style.css"> 
+    <style>
+        /* Simple, clean inline styling just for this page */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 20px;
+        }
+        h2 {
+            color: #1e1e1e;
+            border-bottom: 2px solid #039e03;
+            padding-bottom: 10px;
+        }
+        .player-line {
+            margin: 12px 0;
+            padding: 5px 0;
+            border-bottom: 1px dashed #ddd; /* Adds a clean separator line between players */
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">← Back to Home</a>
+
+    <h2>Registered Players</h2>
+    
+    <div id="player-container">
+        <p>Loading players...</p>
+    </div>
+
+    <script>
+      // 1. Keep your same Google Web App URL here
+      const API_URL = 'https://script.google.com/macros/s/AKfycbz90-tiSmobuWXxdoppLY7Nsoa9ldZCdvrX0Oq-8tQIXfQQZoLU2GjtuZU7JzIEjKg6WA/exec'; 
+
+      async function loadPlayers() {
+        try {
+          const response = await fetch(API_URL);
+          const players = await response.json(); 
+          
+          const container = document.getElementById('player-container');
+          container.innerHTML = ''; // Clears out the "Loading..." message
+
+          if (players.length === 0) {
+            container.innerHTML = '<p>No players registered yet.</p>';
+            return;
+          }
+
+          // 2. Loop through and create a clean line for each player
+          players.forEach(player => {
+            const p = document.createElement('p');
+            p.className = 'player-line';
+            p.textContent = player;
+            container.appendChild(p);
+          });
+
+        } catch (error) {
+          console.error('Error loading players:', error);
+          document.getElementById('player-container').innerHTML = '<p>Error loading players.</p>';
+        }
+      }
+
+      window.onload = loadPlayers;
+    </script>
+
+</body>
+</html>

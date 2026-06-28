@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Past Challenge Results</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f5f6fa;
+      }
+
+      /* Page container */
+      .container {
+        max-width: 90%;
+        margin: 40px auto;
+        padding: 20px;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .result-card {
+        display: flex;               /* horizontal layout */
+        justify-content: space-between;
+        align-items: center;         /* vertical alignment */
+        background-color: #f8f8f8;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border: 3px solid #2c3e50; 
+      }
+
+      .card-text {
+        flex: 1;                     /* take remaining space */
+      }
+
+      .card-image img {
+        max-width: 640px;            /* adjust as needed */
+        max-height: 640px;
+        border-radius: 4px;
+        margin-left: 20px;           /* space between text and image */
+      }
+      /* Back link */
+      .back-link {
+        display: block;
+        margin-top: 30px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Past Snooker Challenge Winners</h1>
+
+      <a class="back-link" href="index.html">← Return to main page</a>
+
+      <div class="result-card">
+        <div class="card-text">
+          No Winners Yet!
+        </div>
+      </div>
+      
+      <!-- Additional result-cards can be added when there are winners-->
+
+    </div>
+  </body>
+</html>

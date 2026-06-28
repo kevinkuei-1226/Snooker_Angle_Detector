@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snooker Tournament Registration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input, textarea, button {
+      margin: 10px 0;
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    #successMessage {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      padding: 10px;
+      margin-bottom: 15px;
+      display: none;
+      text-align: center;
+    }
+
+    .error {
+      color: red;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Contact form</h1>
+
+  <div id="successMessage">
+    Form submitted successfully!`
+  </div>
+
+  <form
+    action="https://formsubmit.co/youremail@gmail.com"
+    method="POST"
+    onsubmit="return handleSubmit()"
+  >
+
+    <!-- First & Last Name -->
+    <input type="text" name="first_name" placeholder="First Name" required>
+    <input type="text" name="last_name" placeholder="Last Name" required>
+
+    <!-- Email (optional) -->
+    <input type="email" name="email" placeholder="Email (optional)">
+
+    <!-- Phone -->
+    <input
+      type="tel"
+      id="phone"
+      name="phone"
+      placeholder="Phone Number (123-456-7890)"
+      required
+      pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+      title="Please enter phone number as 123-456-7890"
+    >
+    <div id="phoneError" class="error">
+      Please enter a valid 10-digit phone number.
+    </div>
+
+    <!-- Message -->
+    <textarea
+      name="message"
+      placeholder="Message (optional, max 500 characters)"
+      maxlength="500"
+      rows="5"
+    ></textarea>
+
+    <!-- Redirect on success -->
+    <input type="hidden" name="_next"
+      value="https://kevinkuei-1226.github.io/EB_Snooker_Tournaments/register.html?success=true">
+
+    <input type="hidden" name="_captcha" value="false">
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    const phoneInput = document.getElementById("phone");
+    const phoneError = document.getElementById("phoneError");
+
+    // Auto-format phone number
+    phoneInput.addEventListener("input", function () {
+      let digits = phoneInput.value.replace(/\D/g, "").slice(0, 10);
+
+      if (digits.length > 6) {
+        phoneInput.value =
+          digits.slice(0, 3) + "-" +
+          digits.slice(3, 6) + "-" +
+          digits.slice(6);
+      } else if (digits.length > 3) {
+        phoneInput.value =
+          digits.slice(0, 3) + "-" +
+          digits.slice(3);
+      } else {
+        phoneInput.value = digits;
+      }
+    });
+
+    function handleSubmit() {
+      const digits = phoneInput.value.replace(/\D/g, "");
+
+      if (digits.length !== 10) {
+        phoneError.style.display = "block";
+        return false;
+      }
+
+      phoneError.style.display = "none";
+
+      alert("Thank you for contacting us! We will get back to you shortly through phone or email.");
+      return true;
+    }
+
+    // Show success message if redirected
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("success") === "true") {
+      document.getElementById("successMessage").style.display = "block";
+    }
+  </script>
+
+</body>
+</html>

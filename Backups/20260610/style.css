@@ -1,0 +1,305 @@
+
+/* --- Basic page styling --- */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+
+/* --- Top banner --- */
+
+header {
+    position: relative;
+    width: 100%;
+    height: 360px;
+    color: rgb(255, 255, 255);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    /* Prevents the blurred edges of the pseudo-element from spilling out */
+    overflow: hidden; 
+}
+
+/* This creates a background layer specifically for the image */
+header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('Images/EB Tables.jpg');
+    background-size: cover;
+    background-position: center;
+    /* Adjust the pixels (px) to change the blur intensity */
+    filter: blur(2px); 
+    /* Keeps the background behind the text */
+    z-index: -1; 
+}
+
+/* --- Main container --- */
+.container {
+    max-width: 90%;
+    margin: 40px auto;
+    padding: 20px;
+    font-size: 24px;
+}
+
+
+/* --- Wrapper for sidebar + main content --- */
+#content-wrapper {
+    display: flex;
+}
+
+
+/* --- Left-side menu --- */
+#sidebar {
+    width: 200px;
+    background-color: #ecf0f1;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+
+#menuContent {
+    display: none; /* hidden by default */
+    margin-top: 10px;
+}
+
+
+#menuContent a {
+    display: block;
+    margin: 5px 0;
+    text-decoration: none;
+    color: #2c3e50;
+}
+
+
+/* --- Main content --- */
+#main {
+    flex: 1;
+    padding: 20px;
+}
+
+/* --- Button styling --- */
+button {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.banner-title {
+    font-size: 64px;
+    font-weight: 800;
+    text-align: center;
+    text-shadow: 4px 4px 10px rgba(0,0,0,0.8);
+}
+
+
+/* Small bottom-right text */
+.banner-host {
+    position: absolute;
+    bottom: 15px;
+    right: 20px;
+    font-size: 20px;
+    opacity: 0.9;
+}
+
+
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+
+.dashboard-card {
+    background-color: #039e03;
+    border-radius: 10px;
+    text-align: center;
+    text-decoration: none;
+    color: #ffffff;
+    padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 30px;
+}
+
+
+.dashboard-card img {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 10px;
+}
+
+
+.dashboard-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background-color: #03c203;
+
+}
+
+
+/* --- Announcement Bar --- */
+.announcement-bar {
+    width: 100%;
+    background-color: #000000; /* dark background */
+    color: #ffffff;
+    overflow: hidden; /* hides text outside the bar */
+    white-space: nowrap;
+    padding: 10px 0;
+}
+
+
+.announcement-text {
+    display: inline-block;
+    padding-left: 100%;
+    animation: scroll-text 20s linear infinite;
+    font-size: 32px;
+}
+
+
+/* Animation */
+@keyframes scroll-text {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+
+
+
+/* ===========================
+   MOBILE STYLES (PHONES)
+   =========================== */
+@media (max-width: 768px) {
+
+  /* --- Top banner --- */
+  header {
+    height: 200px;          /* shorter banner */
+    font-size: 16px;        /* smaller title */
+    padding: 10px;
+    text-align: center;
+  }
+
+  .banner-title {
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .banner-host {
+    font-size: 12px;
+    bottom: 8px;
+    right: 10px;
+  }
+
+  /* --- Main container --- */
+  .container {
+    padding: 15px;
+    font-size: 15px;
+  }
+
+  /* --- Dashboard cards --- */
+  .dashboard {
+    grid-template-columns: 1fr; /* stack cards vertically */
+    gap: 15px;
+  }
+
+  .dashboard-card {
+    padding: 20px;
+    font-size: 30px;
+    flex-direction: column;
+  }
+
+  /* --- Results cards --- */
+  .result-card {
+    flex-direction: column;   /* image below text */
+    align-items: flex-start;
+  }
+
+  .card-image {
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .card-image img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* --- Forms (register page) --- */
+  form {
+    width: 100%;
+  }
+
+  input, textarea, button {
+    font-size: 16px;
+  }
+
+  .announcement-text {
+  display: inline-block;
+  padding-left: 100%;
+  padding-right: 100%;
+  animation: scroll-text 20s linear infinite;
+  font-size: 20px;
+  }
+
+}
+
+
+/* ===========================
+   PLAYERS LIST PAGE
+   =========================== */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  text-decoration: none;
+  color: #1e1e1e;
+  font-weight: bold;
+}
+
+.subtitle {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.players-card {
+  background-color: #f8f8f8;
+  border-radius: 12px;
+  padding: 25px;
+  border: 2px solid #1e1e1e;
+  max-width: 600px;
+}
+
+.players-list {
+  font-size: 22px;
+  line-height: 1.8;
+  padding-left: 20px;
+}
+
+.players-list li {
+  padding: 6px 0;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .players-card {
+    padding: 20px;
+  }
+
+  .players-list {
+    font-size: 18px;
+  }
+}
+

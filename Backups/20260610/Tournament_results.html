@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Past Tournament Results</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f5f6fa;
+      }
+
+      /* Page container */
+      .container {
+        max-width: 90%;
+        margin: 40px auto;
+        padding: 20px;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .result-card {
+        display: flex;               /* horizontal layout */
+        justify-content: space-between;
+        align-items: center;         /* vertical alignment */
+        background-color: #f8f8f8;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border: 3px solid #2c3e50; 
+      }
+
+      .card-text {
+        flex: 1;                     /* take remaining space */
+      }
+
+      .card-image img {
+        max-width: 640px;            /* adjust as needed */
+        max-height: 640px;
+        border-radius: 4px;
+        margin-left: 20px;           /* space between text and image */
+      }
+      /* Back link */
+      .back-link {
+        display: block;
+        margin-top: 30px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Past Snooker Tournament Results</h1>
+
+      <a class="back-link" href="index.html">← Return to main page</a>
+
+      <div class="result-card">
+        <div class="card-text">
+          <h2>December 2025</h2>
+          <p><strong>Winner:</strong> Angus Liew </p>
+          <p><strong>Runner-up:</strong> C.C. Yoo </p>
+          <p><strong># of Players:</strong> 6 </p>
+          
+
+            <a href="Tournament PDFs/EB 202512 Tournament.pdf" target="_blank">
+              Tournament Logistics (PDF)
+            </a>
+        </div>
+        <div class="card-image">
+          <img src="Images/Angus Random.jpg" alt="Winner Photo" />
+        </div>
+      </div>
+      
+      <div class="result-card">
+        <div class="card-text">
+          <h2>February 2026</h2>
+          <p><strong>Winner:</strong> Kevin Kuei </p>
+          <p><strong>Runner-up:</strong> C.C. Yoo </p>
+          <p><strong># of Players:</strong> 6 </p>
+
+            <a href="Tournament PDFs/EB 202602 Tournament.pdf" target="_blank">
+              Tournament Logistics (PDF)
+            </a>
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-text">
+          <h2>April 2026</h2>
+          <p><strong>Co-Winner:</strong> Kevin Kuei </p>
+          <p><strong>Co-Winner:</strong> Chris Lam</p>
+          <p><strong># of Players:</strong> 9 </p>
+
+            <a href="Tournament PDFs/EB 202604 Tournament.pdf" target="_blank">
+              Tournament Logistics (PDF)
+            </a>
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-text">
+          <h2>May 2026</h2>
+          <p><strong>Winner:</strong> Kevin Kuei </p>
+          <p><strong>Runner-up:</strong> Alex Newstead</p>
+          <p><strong># of Players:</strong> 6 </p>
+
+            <a href="Tournament PDFs/EB 202605 Tournament.pdf" target="_blank">
+              Tournament Logistics (PDF)
+            </a>
+        </div>
+      </div>
+      <!-- Additional result-cards can be added when each tournament ends-->
+
+    </div>
+  </body>
+</html>
